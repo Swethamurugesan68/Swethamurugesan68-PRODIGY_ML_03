@@ -1,0 +1,47 @@
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+import cv2
+import os
+
+# Function to load and preprocess images
+def load_and_preprocess_images(folder_path, label):
+    images = []
+    labels = []
+    for filename in os.listdir(folder_path):
+        img = cv2.imread(os.path.join(folder_path, filename))
+        img = cv2.resize(img, (64, 64))  # Resize image to 64x64 pixels
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  # Convert to grayscale
+        images.append(img.flatten())  # Flatten image into a feature vector
+        labels.append(label)
+    return images, labels
+
+# Load and preprocess images for cats and dogs
+cat_images, cat_labels = load_and_preprocess_images('path_to_cat_images_folder', 0)
+dog_images, dog_labels = load_and_preprocess_images('path_to_dog_images_folder', 1)
+
+# Combine cat and dog data
+X = np.concatenate((cat_images, dog_images), axis=0)
+y = np.concatenate((cat_labels, dog_labels))
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Define SVM model
+svm_model = Pipeline([
+    ("scaler", StandardScaler()),  # Standardize features
+    ("svm", SVC(kernel='linear', C=1.0))  # Linear SVM
+])
+
+# Train SVM model
+svm_model.fit(X_train, y_train)
+
+# Predict labels for test data
+y_pred = svm_model.predict(X_test)
+
+# Calculate accuracy
+accuracy = accuracy_score(y_test, y_pred)
+print("Accuracy:", accuracy)
